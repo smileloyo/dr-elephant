@@ -61,8 +61,8 @@ class SparkMetricsAggregator(private val aggregatorConfigurationData: Aggregator
       ((BigDecimal(resourcesAllocatedMBSeconds) * (1.0 - allocatedMemoryWasteBufferPercentage)) - BigDecimal(resourcesUsedMBSeconds))
         .toBigInt
 
-    if (resourcesUsedMBSeconds.isValidLong) {
-      hadoopAggregatedData.setResourceUsed(resourcesUsedMBSeconds.toLong)
+   if (resourcesUsedMBSeconds.isValidLong) {
+     hadoopAggregatedData.setResourceUsed(resourcesUsedMBSeconds.toLong)
     } else {
       logger.info(s"resourcesUsedMBSeconds exceeds Long.MaxValue: ${resourcesUsedMBSeconds}")
     }
