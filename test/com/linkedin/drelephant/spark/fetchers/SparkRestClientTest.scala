@@ -112,6 +112,40 @@ class SparkRestClientTest extends AsyncFunSpec with Matchers {
         assertion
       }
     }
+
+    it("returns the desired data from the Spark REST API for cluster mode application when http in jobhistory address") {
+      import ExecutionContext.Implicits.global
+      val fakeJerseyServer = new FakeJerseyServer() {
+        override def configure(): Application = super.configure() match {
+          case resourceConfig: ResourceConfig =>
+            resourceConfig
+              .register(classOf[FetchClusterModeDataFixtures.ApiResource])
+              .register(classOf[FetchClusterModeDataFixtures.ApplicationResource])
+              .register(classOf[FetchClusterModeDataFixtures.JobsResource])
+              .register(classOf[FetchClusterModeDataFixtures.StagesResource])
+              .register(classOf[FetchClusterModeDataFixtures.ExecutorsResource])
+          case config => config
+        }
+      }
+
+      fakeJerseyServer.setUp()
+
+      val historyServerUri = fakeJerseyServer.target.getUri
+
+      val sparkConf = new SparkConf().set("spark.yarn.historyServer.address", s"http://${historyServerUri.getHost}:${historyServerUri.getPort}")
+      val sparkRestClient = new SparkRestClient(sparkConf)
+
+      sparkRestClient.fetchData(FetchClusterModeDataFixtures.APP_ID) map { restDerivedData =>
+        restDerivedData.applicationInfo.id should be(FetchClusterModeDataFixtures.APP_ID)
+        restDerivedData.applicationInfo.name should be(FetchClusterModeDataFixtures.APP_NAME)
+        restDerivedData.jobDatas should not be(None)
+        restDerivedData.stageDatas should not be(None)
+        restDerivedData.executorSummaries should not be(None)
+      } andThen { case assertion: Try[Assertion] =>
+        fakeJerseyServer.tearDown()
+        assertion
+      }
+    }
   }
 }
 
